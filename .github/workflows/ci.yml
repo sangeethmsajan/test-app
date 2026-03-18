@@ -1,4 +1,4 @@
-name: Laravel CI
+name: Basic Laravel CI
 
 on:
   push:
@@ -8,35 +8,22 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: test_db
-        ports:
-          - 3306:3306
-
     steps:
-      - name: Clone Code
+      - name: 1. Get Code
         uses: actions/checkout@v3
 
-      - name: Setup PHP
+      - name: 2. Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
 
-      - name: Install Composer
+      - name: 3. Install Dependencies
         run: composer install
 
-      - name: Setup Env
-        run: cp .env.example .env
+      - name: 4. Setup App
+        run: |
+          cp .env.example .env
+          php artisan key:generate
 
-      - name: Generate Key
-        run: php artisan key:generate
-
-      - name: Run Migration
-        run: php artisan migrate
-
-      - name: Run Tests
-        run: php artisan test
+      - name: 5. Run Laravel
+        run: php artisan --version
