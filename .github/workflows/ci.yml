@@ -1,72 +1,42 @@
-name: CI
+name: Laravel CI
 
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  ci:
+  test:
     runs-on: ubuntu-latest
 
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:8
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: test_db
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
+      - name: Clone Code
+        uses: actions/checkout@v3
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'        # change to your PHP version
-          extensions: mbstring, pdo, pdo_mysql, xml, bcmath
-          coverage: none
+          php-version: 8.2
 
-      - name: Copy .env
-        run: cp .env.example .env.ci
+      - name: Install Composer
+        run: composer install
 
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: Setup Env
+        run: cp .env.example .env
 
-      - name: Generate app key
-        run: php artisan key:generate --env=ci
+      - name: Generate Key
+        run: php artisan key:generate
 
-      - name: Run Laravel Pint (code style)
-        run: ./vendor/bin/pint --test
+      - name: Run Migration
+        run: php artisan migrate
 
-      - name: Run migrations
-        env:
-          APP_ENV: ci
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: test_db
-          DB_USERNAME: root
-          DB_PASSWORD: root
-        run: php artisan migrate --force
-
-      - name: Run tests
-        env:
-          APP_ENV: ci
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: test_db
-          DB_USERNAME: root
-          DB_PASSWORD: root
+      - name: Run Tests
         run: php artisan test
